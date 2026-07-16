@@ -1,0 +1,6 @@
+{
+  "name": "Riau Sadar Lingkungan Kanwil DJPb Provinsi Riau",
+  "description": "Aplikasi edukasi, pencatatan aksi hijau, kalkulator karbon, dan asisten AI ramah lingkungan Kanwil Ditjen Perbendaharaan Provinsi Riau.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
