@@ -59,7 +59,7 @@ export default function Header() {
             </p>
             <div className="flex items-center gap-2 mt-3 text-emerald-300/80 text-xs">
               <MapPin className="h-3.5 w-3.5 text-amber-400 flex-shrink-0" />
-              <span>Gedung Keuangan Negara, Jl. Jend. Sudirman No. 249, Pekanbaru</span>
+              <span>Jl. Jend. Sudirman No. 249, Pekanbaru</span>
             </div>
           </div>
         </div>
