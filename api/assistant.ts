@@ -24,7 +24,11 @@ export default async function handler(req: any, res: any) {
       role: msg.role === "user" ? "user" : "model",
       parts: [{ text: msg.content }],
     }));
+const models = await ai.models.list();
 
+for (const model of models) {
+  console.log(model.name);
+}
     const result = await ai.models.generateContent({
      model: "gemini-2.5-pro",
       contents: history,
