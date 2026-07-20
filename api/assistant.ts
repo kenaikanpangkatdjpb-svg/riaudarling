@@ -26,6 +26,7 @@ export default async function handler(req: any, res: any) {
     }));
 const models = await ai.models.list();
 
+console.log("=== MODEL YANG TERSEDIA ===");
 for (const model of models) {
   console.log(model.name);
 }
