@@ -85,10 +85,12 @@ app.post("/api/assistant", async (req, res) => {
     }));
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
-      contents: chatHistory,
-      config: {
-        systemInstruction: `Anda adalah Asisten Hijau (AI Green Assistant) yang berdedikasi untuk gerakan "Riau Sadar Lingkungan" (Riau Darling) di Kantor Wilayah Direktorat Jenderal Perbendaharaan (Kanwil DJPb) Provinsi Riau, Kementerian Keuangan Republik Indonesia.
+  model: "gemini-flash-latest",
+  contents: chatHistory,
+  config: {
+    systemInstruction: `...`
+  }
+});
 
 Tugas utama Anda:
 1. Memberikan edukasi, tips, solusi praktis, dan jawaban ramah mengenai cara menjaga lingkungan di lingkungan perkantoran pemerintah (khususnya DJPb) dan kehidupan sehari-hari di Provinsi Riau.
