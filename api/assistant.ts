@@ -1,9 +1,15 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY!,
-});
+if (!process.env.GEMINI_API_KEY) {
+  throw new Error("GEMINI_API_KEY belum diset di Vercel.");
+}
 
+console.log("Gemini API Key tersedia:", process.env.GEMINI_API_KEY.substring(0, 6) + "...");
+console.log("Model yang digunakan: gemini-flash-latest");
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
     return res.status(405).json({
