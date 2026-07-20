@@ -1,13 +1,26 @@
 import { GoogleGenAI } from "@google/genai";
 
-
-const response = await fetch("/api/assistant", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({ messages }),
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY!,
 });
+
+export default async function handler(req: any, res: any) {
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      error: "Method Not Allowed",
+    });
+  }
+
+  try {
+    const { messages } = req.body;
+
+    if (!messages || !Array.isArray(messages)) {
+      return res.status(400).json({
+        error: "Format pesan tidak valid.",
+      });
+    }
+
+    // lanjutkan generateContent...
 
 const data = await response.json();
 
