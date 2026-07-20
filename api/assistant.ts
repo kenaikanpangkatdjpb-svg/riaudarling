@@ -49,8 +49,11 @@ Berikan jawaban yang ramah, praktis, dan mendukung gerakan Riau Darling.
   } catch (err: any) {
     console.error(err);
 
-    return res.status(500).json({
-      error: err.message,
-    });
+   console.error(err);
+
+return res.status(err.status || 500).json({
+  error: err.message,
+  status: err.status,
+});
   }
 }
