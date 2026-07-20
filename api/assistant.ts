@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+throw new Error("TEST API ASSISTANT VERSI BARU");
 
 if (!process.env.GEMINI_API_KEY) {
   throw new Error("GEMINI_API_KEY belum diset di Vercel.");
