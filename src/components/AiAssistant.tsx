@@ -51,7 +51,14 @@ export default function AiAssistant() {
       });
 
       if (!response.ok) {
-        throw new Error("Gagal terhubung dengan server asisten hijau.");
+        let serverErrorMsg = "Gagal terhubung dengan server asisten hijau.";
+        try {
+          const errData = await response.json();
+          if (errData && errData.error) {
+            serverErrorMsg = errData.error;
+          }
+        } catch (_) {}
+        throw new Error(serverErrorMsg);
       }
 
       const data = await response.json();
