@@ -83,7 +83,8 @@ app.post("/api/assistant", async (req, res) => {
       role: msg.role === "user" ? "user" as const : "model" as const,
       parts: [{ text: msg.content }]
     }));
-
+console.log("===== GEMINI REQUEST =====");
+console.log("Model:", "gemini-flash-latest");
     const response = await ai.models.generateContent({
   model: "gemini-flash-latest",
   contents: chatHistory,
