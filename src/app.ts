@@ -1,6 +1,6 @@
 import express from "express";
-import { GoogleGenAI } from "@google/genai";
-import dotenv from "dotenv";
+import path from "path";
+import app from "./src/server/app";
 
 dotenv.config();
 
