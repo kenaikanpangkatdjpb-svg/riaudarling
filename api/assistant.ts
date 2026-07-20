@@ -25,7 +25,7 @@ export default async function handler(req: any, res: any) {
       parts: [{ text: msg.content }],
     }));
     const result = await ai.models.generateContent({
-     model: "gemini-2.5-pro",
+    model: "gemini-2.5-flash"
       contents: history,
       config: {
         systemInstruction: `
