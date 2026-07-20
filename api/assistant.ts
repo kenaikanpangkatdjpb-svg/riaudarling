@@ -59,13 +59,14 @@ Berikan jawaban yang ramah, praktis, dan mendukung gerakan Riau Darling.
       text: result.text,
     });
 
-  } catch (err: any) {
+} catch (err: any) {
   console.error("===== GEMINI ERROR =====");
-  console.error(JSON.stringify(err, null, 2));
+  console.error(err);
 
   return res.status(500).json({
-    error: err.message,
-    status: err.status,
+    error: err.message || String(err),
+    status: err.status || 500,
+    stack: process.env.NODE_ENV !== "production" ? err.stack : undefined,
   });
 }
 
