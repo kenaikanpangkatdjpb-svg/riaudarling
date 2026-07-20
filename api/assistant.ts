@@ -1,10 +1,19 @@
 import { GoogleGenAI } from "@google/genai";
 throw new Error("TEST API ASSISTANT VERSI BARU");
 
-if (!process.env.GEMINI_API_KEY) {
-  throw new Error("GEMINI_API_KEY belum diset di Vercel.");
-}
+const response = await fetch("/api/assistant", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({ messages }),
+});
 
+const data = await response.json();
+
+if (!response.ok) {
+  throw new Error(data.error || "Gagal terhubung dengan server asisten hijau.");
+}
 console.log("Gemini API Key tersedia:", process.env.GEMINI_API_KEY.substring(0, 6) + "...");
 console.log("Model yang digunakan: gemini-flash-latest");
 
