@@ -107,12 +107,25 @@ Gaya Komunikasi:
 
     const reply = response.text || "Maaf, saya tidak dapat merumuskan jawaban saat ini.";
     return res.json({ text: reply });
-  } catch (error: any) {
-    console.error("Kesalahan pada Gemini API, beralih ke asisten pintar lokal:", error);
-    // Dynamic intelligent fallback instead of crashing with 500
-    const fallbackText = getSimulatedResponse(userQuery);
-    return res.json({ text: fallbackText });
+ } catch (error: any) {
+  console.error("===== GEMINI ERROR =====");
+  console.error(error);
+
+  if (error?.message) {
+    console.error("Message:", error.message);
   }
+
+  if (error?.status) {
+    console.error("Status:", error.status);
+  }
+
+  if (error?.error) {
+    console.error("Detail:", error.error);
+  }
+
+  const fallbackText = getSimulatedResponse(userQuery);
+  return res.json({ text: fallbackText });
+}
 });
 
 // Serve Frontend using Vite or Static files
