@@ -30,6 +30,8 @@ export default async function handler(req: any, res: any) {
       role: msg.role === "user" ? "user" : "model",
       parts: [{ text: msg.content }],
     }));
+    console.log("===== GEMINI REQUEST =====");
+console.log("Model:", "gemini-flash-latest");
     const result = await ai.models.generateContent({
    model: "gemini-flash-latest",
       contents: history,
