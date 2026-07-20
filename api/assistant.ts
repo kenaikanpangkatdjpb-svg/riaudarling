@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-throw new Error("TEST API ASSISTANT VERSI BARU");
+
 
 const response = await fetch("/api/assistant", {
   method: "POST",
@@ -40,7 +40,8 @@ export default async function handler(req: any, res: any) {
       role: msg.role === "user" ? "user" : "model",
       parts: [{ text: msg.content }],
     }));
-    console.log("===== GEMINI REQUEST =====");
+       console.log("===== GEMINI REQUEST =====");
+console.log("SDK Version:", "@google/genai");
 console.log("Model:", "gemini-flash-latest");
     const result = await ai.models.generateContent({
    model: "gemini-flash-latest",
@@ -59,9 +60,14 @@ Berikan jawaban yang ramah, praktis, dan mendukung gerakan Riau Darling.
     });
 
   } catch (err: any) {
-    console.error(err);
+  console.error("===== GEMINI ERROR =====");
+  console.error(JSON.stringify(err, null, 2));
 
-   console.error(err);
+  return res.status(500).json({
+    error: err.message,
+    status: err.status,
+  });
+}
 
 return res.status(err.status || 500).json({
   error: err.message,
