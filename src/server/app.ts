@@ -115,5 +115,37 @@ Tugas Anda:
     });
   }
 });
+app.get("/api/models", async (req, res) => {
+  try {
+    if (!ai) {
+      return res.status(500).json({
+        error: "GEMINI_API_KEY belum dikonfigurasi.",
+      });
+    }
 
+    const pager = await ai.models.list();
+
+    const models: string[] = [];
+
+    for await (const model of pager) {
+      models.push(model.name);
+    }
+
+    return res.json({
+      success: true,
+      total: models.length,
+      models,
+    });
+
+  } catch (error: any) {
+    console.error("===== LIST MODEL ERROR =====");
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+      error,
+    });
+  }
+});
 export default app;
