@@ -6,33 +6,59 @@ import GreenCalculator from "./components/GreenCalculator";
 import ActionLogger from "./components/ActionLogger";
 import EcoQuiz from "./components/EcoQuiz";
 import AiAssistant from "./components/AiAssistant";
+import FirebaseManager from "./components/FirebaseManager";
 import { LoggedAction } from "./types";
 import { SEED_LOGGED_ACTIONS, GREEN_ACTION_TEMPLATES } from "./data";
+import { isFirebaseConnected, subscribeToActions, saveActionToFirestore } from "./firebase";
 import { Leaf, Trophy, Calculator, HelpCircle, Sparkles, Star, Trees, HelpCircle as HelpIcon } from "lucide-react";
 import { motion } from "motion/react";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "calculator" | "quiz" | "assistant">("dashboard");
   const [loggedActions, setLoggedActions] = useState<LoggedAction[]>([]);
+  const [firebaseConnected, setFirebaseConnected] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Load initial data from localStorage or seed data
+  // Load and sync data
   useEffect(() => {
-    const stored = localStorage.getItem("riau_darling_actions");
-    if (stored) {
-      try {
-        setLoggedActions(JSON.parse(stored));
-      } catch (e) {
-        console.error("Gagal membaca riwayat aksi lokal:", e);
-        setLoggedActions(SEED_LOGGED_ACTIONS);
-      }
+    const isConnected = isFirebaseConnected();
+    setFirebaseConnected(isConnected);
+
+    if (isConnected) {
+      console.log("Menghubungkan ke real-time stream Firebase Firestore...");
+      // Subscribe to real-time updates from Firestore
+      const unsubscribe = subscribeToActions((actions) => {
+        if (actions.length > 0) {
+          setLoggedActions(actions);
+        } else {
+          // If Firestore collection is empty, seed it or fall back to seeds
+          setLoggedActions(SEED_LOGGED_ACTIONS);
+        }
+      });
+      return () => unsubscribe();
     } else {
-      setLoggedActions(SEED_LOGGED_ACTIONS);
-      localStorage.setItem("riau_darling_actions", JSON.stringify(SEED_LOGGED_ACTIONS));
+      console.log("Firebase tidak terkonfigurasi. Memuat data dari LocalStorage...");
+      const stored = localStorage.getItem("riau_darling_actions");
+      if (stored) {
+        try {
+          setLoggedActions(JSON.parse(stored));
+        } catch (e) {
+          console.error("Gagal membaca riwayat aksi lokal:", e);
+          setLoggedActions(SEED_LOGGED_ACTIONS);
+        }
+      } else {
+        setLoggedActions(SEED_LOGGED_ACTIONS);
+        localStorage.setItem("riau_darling_actions", JSON.stringify(SEED_LOGGED_ACTIONS));
+      }
     }
-  }, []);
+  }, [refreshTrigger]);
+
+  const handleFirebaseRefresh = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
 
   // Callback to add a new green action logged by employee
-  const handleAddAction = (employeeName: string, actionId: string, notes?: string) => {
+  const handleAddAction = async (employeeName: string, actionId: string, notes?: string) => {
     const tmpl = GREEN_ACTION_TEMPLATES.find((t) => t.id === actionId);
     if (!tmpl) return;
 
@@ -49,13 +75,23 @@ export default function App() {
       notes,
     };
 
-    const updated = [...loggedActions, actionToLog];
-    setLoggedActions(updated);
-    localStorage.setItem("riau_darling_actions", JSON.stringify(updated));
+    if (firebaseConnected) {
+      const saved = await saveActionToFirestore(actionToLog);
+      if (!saved) {
+        // Fallback local if failed
+        const updated = [...loggedActions, actionToLog];
+        setLoggedActions(updated);
+        localStorage.setItem("riau_darling_actions", JSON.stringify(updated));
+      }
+    } else {
+      const updated = [...loggedActions, actionToLog];
+      setLoggedActions(updated);
+      localStorage.setItem("riau_darling_actions", JSON.stringify(updated));
+    }
   };
 
   // Callback to handle earning quiz points
-  const handleEarnQuizPoints = (points: number, reason: string) => {
+  const handleEarnQuizPoints = async (points: number, reason: string) => {
     const actionToLog: LoggedAction = {
       id: "quiz-" + Date.now(),
       employeeName: "Pendekar Kuis Riau Darling",
@@ -69,14 +105,23 @@ export default function App() {
       notes: "Menjawab kuis sadar lingkungan secara digital",
     };
 
-    const updated = [...loggedActions, actionToLog];
-    setLoggedActions(updated);
-    localStorage.setItem("riau_darling_actions", JSON.stringify(updated));
+    if (firebaseConnected) {
+      const saved = await saveActionToFirestore(actionToLog);
+      if (!saved) {
+        const updated = [...loggedActions, actionToLog];
+        setLoggedActions(updated);
+        localStorage.setItem("riau_darling_actions", JSON.stringify(updated));
+      }
+    } else {
+      const updated = [...loggedActions, actionToLog];
+      setLoggedActions(updated);
+      localStorage.setItem("riau_darling_actions", JSON.stringify(updated));
+    }
   };
 
   return (
     <div className="min-h-screen bg-slate-50/70 py-6 px-4 sm:px-6 lg:px-8 font-sans green-gradient-bg" id="app-root-container">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto space-y-6">
         
         {/* Culturally Rich Header */}
         <Header />
@@ -86,6 +131,9 @@ export default function App() {
           onStartQuiz={() => setActiveTab("quiz")} 
           onOpenAssistant={() => setActiveTab("assistant")} 
         />
+
+        {/* Connection to Firebase Cloud Manager */}
+        <FirebaseManager onConnectionChange={handleFirebaseRefresh} />
 
         {/* Tab Navigation Menu */}
         <div className="flex border-b border-slate-200 mb-8 overflow-x-auto whitespace-nowrap no-scrollbar gap-1" id="tab-navigation">
