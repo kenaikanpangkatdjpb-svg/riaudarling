@@ -33,7 +33,32 @@ export default async function handler(req: any, res: any) {
       role: msg.role === "user" ? "user" : "model",
       parts: [{ text: msg.content }],
     }));
+const history = messages.map((msg: any) => ({
+  role: msg.role === "user" ? "user" : "model",
+  parts: [{ text: msg.content }],
+}));
 
+// ===== TAMBAHKAN DI SINI =====
+const models = await ai.models.list();
+
+console.log("===== DAFTAR MODEL =====");
+
+for (const model of models) {
+  console.log(model.name);
+}
+// ===== BATAS AKHIR =====
+
+const result = await ai.models.generateContent({
+  model: "gemini-2.5-flash",
+  contents: history,
+  config: {
+    systemInstruction: `
+Anda adalah Asisten Hijau Kanwil DJPb Provinsi Riau.
+Jawablah menggunakan Bahasa Indonesia.
+Berikan jawaban yang ramah, praktis, dan mendukung gerakan Riau Darling.
+`,
+  },
+});
     const result = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: history,
