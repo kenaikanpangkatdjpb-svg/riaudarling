@@ -3,6 +3,39 @@ import { ChatMessage } from "../types";
 import { MessageSquare, Send, Sparkles, User, AlertCircle, RefreshCw, Leaf } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
+// Local offline simulated fallback responder for fully static environments like GitHub Pages
+function getClientSimulatedResponse(query: string): string {
+  const q = query.toLowerCase();
+  
+  const pantun = `\n\n*Elok nian si lebah sialang,\nBersarang tinggi di dahan kayu;\nAlam dijaga bumi pun tenang,\nWarisan luhur adat Melayu.*`;
+
+  if (q.includes("karbon") || q.includes("co2") || q.includes("emisi")) {
+    return `[Asisten Hijau Riau Darling - Mode Pintar Lokal]\n\nHalo Rekan Green DJPb! Karbon (atau CO2) adalah gas emisi rumah kaca yang menjadi penyebab utama pemanasan global dan perubahan iklim.\n\nDi lingkungan kantor Kanwil DJPb Riau, jejak karbon berasal dari penggunaan listrik (AC, lampu, komputer), kendaraan dinas, serta produksi sampah perkantoran.\n\nSetiap langkah kecil kita, seperti mematikan komputer setelah pulang kantor, menghemat 1 lembar kertas, atau membawa tumbler pribadi, berkontribusi langsung menurunkan gram demi gram CO2 yang dilepaskan ke udara Pekanbaru. Mari pantau jejak karbon kita melalui menu **Kalkulator Karbon**!${pantun}`;
+  }
+  
+  if (q.includes("kertas") || q.includes("sakti") || q.includes("nadine") || q.includes("paperless") || q.includes("digit")) {
+    return `[Asisten Hijau Riau Darling - Mode Pintar Lokal]\n\nHalo Rekan Green DJPb! Digitalisasi administrasi adalah senjata utama kita dalam melestarikan paru-paru bumi.\n\nDengan memanfaatkan aplikasi kementerian seperti **SAKTI, Nadine, DIGIPAY, dan SAKTI Web**, kita telah memotong rantai penggunaan kertas (paperless) secara drastis di Kanwil DJPb Riau. \n\nSatu rim kertas yang kita hemat setara dengan menyelamatkan sebagian kecil pohon rimba yang memproduksi oksigen bagi kehidupan kita. Selalu usahakan melakukan review dokumen secara digital sebelum memutuskan untuk mencetak dokumen fisik!${pantun}`;
+  }
+  
+  if (q.includes("plastik") || q.includes("botol") || q.includes("tumbler") || q.includes("sampah") || q.includes("pantry")) {
+    return `[Asisten Hijau Riau Darling - Mode Pintar Lokal]\n\nHalo Tuan dan Puan! Tahukah Anda bahwa sebuah botol plastik membutuhkan waktu hingga 450 tahun untuk dapat terurai secara alami?\n\nMelalui gerakan **Riau Darling**, Kanwil DJPb Riau mengampanyekan gerakan membawa tumbler pribadi ke tempat kerja. Dengan meniadakan botol air mineral plastik sekali pakai di ruang rapat dan pantry, kita menghentikan timbunan sampah mikroplastik yang dapat mencemari aliran air berharga seperti Sungai Siak. Mari jadikan membawa Tumbler sebagai gaya hidup keren di kantor!${pantun}`;
+  }
+  
+  if (q.includes("listrik") || q.includes("energi") || q.includes("ac") || q.includes("lampu") || q.includes("komputer")) {
+    return `[Asisten Hijau Riau Darling - Mode Pintar Lokal]\n\nHalo Rekan Green DJPb! Hemat energi adalah aksi nyata yang paling mudah dan berdampak instan di kantor kita.\n\nBeberapa aturan praktis hemat energi di Kanwil DJPb Riau:\n1. Atur suhu AC ruangan pada kisaran ideal 24°C - 25°C.\n2. Matikan AC dan lampu di ruangan yang sedang kosong atau saat istirahat.\n3. Shutdown penuh komputer, monitor, dan printer sebelum Tuan dan Puan meninggalkan meja kerja di sore hari.\n\nDengan menghemat energi, kita mengurangi beban pembangkit listrik berbahan bakar fosil yang mencemari udara bumi Lancang Kuning. Let's do this!${pantun}`;
+  }
+  
+  if (q.includes("karhutla") || q.includes("kebakaran") || q.includes("gambut") || q.includes("asap")) {
+    return `[Asisten Hijau Riau Darling - Mode Pintar Lokal]\n\nHalo Tuan dan Puan! Menjaga kelestarian lahan gambut Riau adalah tanggung jawab moral kita bersama.\n\nLahan gambut basah di Provinsi Riau adalah salah satu penyimpan karbon terbesar di dunia. Jika gambut mengering dan terbakar (karhutla), jutaan ton emisi karbon akan lepas ke atmosfer dan memicu bencana kabut asap yang berbahaya.\n\nGerakan Riau Darling mendukung kesadaran pencegahan karhutla dengan mengedukasi masyarakat luas serta mengadopsi gaya hidup bebas emisi karbon mulai dari lingkungan perkantoran pemerintah.${pantun}`;
+  }
+  
+  if (q.includes("pantun") || q.includes("melayu") || q.includes("adat") || q.includes("budaya")) {
+    return `[Asisten Hijau Riau Darling - Mode Pintar Lokal]\n\nHalo Tuan dan Puan! Budaya Melayu Riau sangat menjunjung tinggi kelestarian alam dan lingkungan hidup sebagai warisan sakral. Berikut pantun khusus untuk Anda:\n\n*Pergi ke pasar membeli madu,\nMadu manis lebah kelulut;\nMari bersama bersatu padu,\nMenjaga alam rimba dan gambut.*\n\n*Elok nian si lebah sialang,\nBersarang tinggi di dahan kayu;\nAlam dijaga bumi pun tenang,\nWarisan luhur adat Melayu.*`;
+  }
+  
+  return `[Asisten Hijau Riau Darling]\n\nHalo Rekan Green DJPb! Terima kasih atas pertanyaannya yang luar biasa.\n\nMari terus dukung gerakan **Riau Darling (Sadar Lingkungan)** di Kanwil DJPb Provinsi Riau dengan mempraktikkan tiga aksi utama:\n1. **Zero Plastic**: Gunakan tumbler pribadi, hindari plastik sekali pakai.\n2. **Paperless**: Optimalkan SAKTI, Nadine, dan DIGIPAY untuk mengurangi cetak kertas.\n3. **Eco Energy**: Hemat listrik dengan mematikan perangkat elektronik pasca jam kerja dan atur AC pada suhu 24°C.\n\nAda hal spesifik yang ingin ditanyakan seputar hemat energi, kebijakan paperless, atau kearifan adat Melayu Riau? Silakan tanyakan kepada saya!${pantun}`;
+}
+
 const QUICK_PROMPTS = [
   "Bagaimana SAKTI & Nadine menghemat kertas?",
   "Tips hemat energi AC ruang rapat?",
@@ -20,6 +53,7 @@ export default function AiAssistant() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [usingFallback, setUsingFallback] = useState(false);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -51,22 +85,24 @@ export default function AiAssistant() {
       });
 
       if (!response.ok) {
-        let serverErrorMsg = "Gagal terhubung dengan server asisten hijau.";
-        try {
-          const errData = await response.json();
-          if (errData && errData.error) {
-            serverErrorMsg = errData.error;
-          }
-        } catch (_) {}
-        throw new Error(serverErrorMsg);
+        throw new Error("HTTP " + response.status);
       }
 
       const data = await response.json();
       const modelMsg: ChatMessage = { role: "model", content: data.text };
       setMessages((prev) => [...prev, modelMsg]);
+      setUsingFallback(false);
     } catch (err: any) {
-      console.error("Kesalahan Asisten AI:", err);
-      setError(err.message || "Terjadi kendala jaringan. Silakan coba kembali.");
+      console.warn("API `/api/assistant` gagal atau di luar lingkungan server (misalnya GitHub Pages). Menjalankan mode asisten pintar lokal: ", err);
+      // Run smart simulator directly on the client (Zero-config, perfect for GitHub Pages)
+      const simulatedText = getClientSimulatedResponse(textToSend);
+      
+      // Artificial slight delay to make it feel natural
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      const modelMsg: ChatMessage = { role: "model", content: simulatedText };
+      setMessages((prev) => [...prev, modelMsg]);
+      setUsingFallback(true);
     } finally {
       setIsLoading(false);
     }
@@ -100,9 +136,15 @@ export default function AiAssistant() {
             <Sparkles className="h-5 w-5 animate-spin-slow" />
           </div>
           <div>
-            <h3 className="text-md font-bold text-slate-800 flex items-center gap-1">
-              Asisten Hijau AI Riau Darling
-              <span className="text-[9px] bg-amber-400 text-emerald-950 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Gemini 3.5</span>
+            <h3 className="text-md font-bold text-slate-800 flex items-center gap-1.5 flex-wrap">
+              <span>Asisten Hijau AI Riau Darling</span>
+              <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                usingFallback 
+                  ? "bg-slate-100 text-slate-600 border border-slate-200" 
+                  : "bg-amber-400 text-emerald-950"
+              }`}>
+                {usingFallback ? "Pintar Lokal" : "Gemini 3.5"}
+              </span>
             </h3>
             <p className="text-slate-500 text-[11px]">Edukasi ramah lingkungan berlatar tradisi Melayu Riau.</p>
           </div>
