@@ -1,19 +1,26 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { LoggedAction, GreenActionTemplate, ActionCategory, LeaderboardEntry } from "../types";
-import { GREEN_ACTION_TEMPLATES } from "../data";
 import { PlusCircle, Award, Trophy, Users, CheckCircle, FileText, Cpu, CupSoda, Utensils, Thermometer, Power, Trash2, Car, HelpCircle, History } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 interface ActionLoggerProps {
   loggedActions: LoggedAction[];
+  actionTemplates: GreenActionTemplate[];
   onAddAction: (employeeName: string, actionId: string, notes?: string) => void;
 }
 
-export default function ActionLogger({ loggedActions, onAddAction }: ActionLoggerProps) {
+export default function ActionLogger({ loggedActions, actionTemplates, onAddAction }: ActionLoggerProps) {
   const [employeeName, setEmployeeName] = useState("");
-  const [selectedActionId, setSelectedActionId] = useState(GREEN_ACTION_TEMPLATES[0].id);
+  const [selectedActionId, setSelectedActionId] = useState(actionTemplates[0]?.id || "");
   const [notes, setNotes] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
+
+  // Sync selected action ID when templates change or load
+  useEffect(() => {
+    if (actionTemplates.length > 0 && !actionTemplates.some(t => t.id === selectedActionId)) {
+      setSelectedActionId(actionTemplates[0].id);
+    }
+  }, [actionTemplates, selectedActionId]);
 
   // Categories helper to map nice badges and icons
   const getCategoryBadge = (category: ActionCategory) => {
@@ -96,7 +103,7 @@ export default function ActionLogger({ loggedActions, onAddAction }: ActionLogge
       .map((entry, idx) => ({ ...entry, rank: idx + 1 }));
   }, [loggedActions]);
 
-  const selectedTemplate = GREEN_ACTION_TEMPLATES.find(t => t.id === selectedActionId);
+  const selectedTemplate = actionTemplates.find(t => t.id === selectedActionId);
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-12 gap-8" id="action-logger-section">
@@ -141,7 +148,7 @@ export default function ActionLogger({ loggedActions, onAddAction }: ActionLogge
                 onChange={(e) => setSelectedActionId(e.target.value)}
                 className="w-full text-sm px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white transition-all cursor-pointer"
               >
-                {GREEN_ACTION_TEMPLATES.map((tmpl) => (
+                {actionTemplates.map((tmpl) => (
                   <option key={tmpl.id} value={tmpl.id}>
                     {tmpl.name} (+{tmpl.points} Poin)
                   </option>
@@ -293,7 +300,7 @@ export default function ActionLogger({ loggedActions, onAddAction }: ActionLogge
             <div className="text-center py-8 text-slate-400 text-xs">Belum ada aktivitas.</div>
           ) : (
             [...loggedActions].reverse().map((act) => {
-              const matchingTemplate = GREEN_ACTION_TEMPLATES.find(t => t.id === act.actionId);
+              const matchingTemplate = actionTemplates.find(t => t.id === act.actionId);
               const iconElement = getActionIcon(matchingTemplate?.iconName || "CheckCircle");
 
               return (

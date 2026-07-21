@@ -1,14 +1,14 @@
 import React, { useState } from "react";
-import { INITIAL_QUIZ_QUESTIONS } from "../data";
 import { QuizQuestion } from "../types";
 import { HelpCircle, Award, CheckCircle2, AlertTriangle, ArrowRight, RotateCcw, ShieldCheck, BookOpen } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 interface EcoQuizProps {
+  quizQuestions: QuizQuestion[];
   onEarnPoints: (points: number, reason: string) => void;
 }
 
-export default function EcoQuiz({ onEarnPoints }: EcoQuizProps) {
+export default function EcoQuiz({ quizQuestions, onEarnPoints }: EcoQuizProps) {
   const [gameState, setGameState] = useState<"welcome" | "playing" | "summary">("welcome");
   const [currentIdx, setCurrentIdx] = useState(0);
   const [selectedOptionIdx, setSelectedOptionIdx] = useState<number | null>(null);
@@ -17,7 +17,16 @@ export default function EcoQuiz({ onEarnPoints }: EcoQuizProps) {
   const [totalPointsEarned, setTotalPointsEarned] = useState(0);
   const [userAnswers, setUserAnswers] = useState<number[]>([]);
 
-  const questions: QuizQuestion[] = INITIAL_QUIZ_QUESTIONS;
+  const questions: QuizQuestion[] = quizQuestions.length > 0 ? quizQuestions : [
+    {
+      id: 999,
+      question: "Silakan tambahkan pertanyaan kuis di Panel Admin.",
+      options: ["Opsi 1", "Opsi 2", "Opsi 3", "Opsi 4"],
+      correctIndex: 0,
+      explanation: "Kuis sedang kosong.",
+      points: 10
+    }
+  ];
   const currentQuestion = questions[currentIdx];
 
   const handleStartQuiz = () => {
