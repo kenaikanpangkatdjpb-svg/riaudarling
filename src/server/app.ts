@@ -85,7 +85,21 @@ app.post("/api/assistant", async (req, res) => {
     }));
 console.log("===== GEMINI REQUEST =====");
 console.log("Model:", "gemini-flash-latest");
-    const response = await ai.models.generateContent({
+    console.log("SDK:", "@google/genai");
+
+try {
+  const pager = await ai.models.list();
+
+  console.log("===== MODEL TERSEDIA =====");
+
+  for await (const model of pager) {
+    console.log(model.name);
+  }
+} catch (e) {
+  console.error("LIST MODEL ERROR:", e);
+}
+
+const response = await ai.models.generateContent({
   model: "gemini-flash-latest",
   contents: chatHistory,
   config: {
