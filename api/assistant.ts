@@ -12,35 +12,15 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const { messages } = req.body;
-
-    if (!messages || !Array.isArray(messages)) {
-      return res.status(400).json({
-        error: "Format pesan tidak valid.",
-      });
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY belum diset.");
     }
 
-    // lanjutkan generateContent...
+    console.log(
+      "Gemini Key:",
+      process.env.GEMINI_API_KEY.substring(0, 6) + "..."
+    );
 
-const data = await response.json();
-
-if (!response.ok) {
-  throw new Error(data.error || "Gagal terhubung dengan server asisten hijau.");
-}
-console.log("Gemini API Key tersedia:", process.env.GEMINI_API_KEY.substring(0, 6) + "...");
-console.log("Model yang digunakan: gemini-flash-latest");
-
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
-export default async function handler(req: any, res: any) {
-  if (req.method !== "POST") {
-    return res.status(405).json({
-      error: "Method Not Allowed",
-    });
-  }
-
-  try {
     const { messages } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
@@ -53,11 +33,9 @@ export default async function handler(req: any, res: any) {
       role: msg.role === "user" ? "user" : "model",
       parts: [{ text: msg.content }],
     }));
-       console.log("===== GEMINI REQUEST =====");
-console.log("SDK Version:", "@google/genai");
-console.log("Model:", "gemini-flash-latest");
+
     const result = await ai.models.generateContent({
-   model: "gemini-flash-latest",
+      model: "gemini-2.5-flash",
       contents: history,
       config: {
         systemInstruction: `
@@ -71,21 +49,12 @@ Berikan jawaban yang ramah, praktis, dan mendukung gerakan Riau Darling.
     return res.status(200).json({
       text: result.text,
     });
+  } catch (err: any) {
+    console.error("===== GEMINI ERROR =====");
+    console.error(err);
 
-} catch (err: any) {
-  console.error("===== GEMINI ERROR =====");
-  console.error(err);
-
-  return res.status(500).json({
-    error: err.message || String(err),
-    status: err.status || 500,
-    stack: process.env.NODE_ENV !== "production" ? err.stack : undefined,
-  });
-}
-
-return res.status(err.status || 500).json({
-  error: err.message,
-  status: err.status,
-});
+    return res.status(500).json({
+      error: err.message || String(err),
+    });
   }
 }
