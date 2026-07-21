@@ -16,11 +16,6 @@ export default async function handler(req: any, res: any) {
       throw new Error("GEMINI_API_KEY belum diset.");
     }
 
-    console.log(
-      "Gemini Key:",
-      process.env.GEMINI_API_KEY.substring(0, 6) + "..."
-    );
-
     const { messages } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
@@ -33,45 +28,22 @@ export default async function handler(req: any, res: any) {
       role: msg.role === "user" ? "user" : "model",
       parts: [{ text: msg.content }],
     }));
-const history = messages.map((msg: any) => ({
-  role: msg.role === "user" ? "user" : "model",
-  parts: [{ text: msg.content }],
-}));
 
-// ===== TAMBAHKAN DI SINI =====
-const models = await ai.models.list();
+    // Menampilkan daftar model yang tersedia
+    try {
+      const pager = await ai.models.list();
 
-console.log("===== DAFTAR MODEL =====");
+      console.log("===== MODEL TERSEDIA =====");
 
-for (const model of models) {
-  console.log(model.name);
-}
-// ===== BATAS AKHIR =====
-console.log("===== MODEL YANG TERSEDIA =====");
+      for await (const model of pager) {
+        console.log(model.name);
+      }
+    } catch (e) {
+      console.error("Tidak dapat mengambil daftar model:", e);
+    }
 
-try {
-  const pager = await ai.models.list();
-
-  for await (const model of pager) {
-    console.log(model.name);
-  }
-} catch (e) {
-  console.error("Gagal mengambil daftar model:", e);
-}
-
-const result = await ai.models.generateContent({
-const result = await ai.models.generateContent({
-  model: "gemini-2.5-flash",
-  contents: history,
-  config: {
-    systemInstruction: `
-Anda adalah Asisten Hijau Kanwil DJPb Provinsi Riau.
-Jawablah menggunakan Bahasa Indonesia.
-Berikan jawaban yang ramah, praktis, dan mendukung gerakan Riau Darling.
-`,
-  },
-});
     const result = await ai.models.generateContent({
+      // Ganti nanti setelah kita tahu model yang tersedia
       model: "gemini-2.5-flash",
       contents: history,
       config: {
@@ -84,7 +56,7 @@ Berikan jawaban yang ramah, praktis, dan mendukung gerakan Riau Darling.
     });
 
     return res.status(200).json({
-      text: result.text,
+      text: result.text ?? "",
     });
   } catch (err: any) {
     console.error("===== GEMINI ERROR =====");
