@@ -47,7 +47,19 @@ for (const model of models) {
   console.log(model.name);
 }
 // ===== BATAS AKHIR =====
+console.log("===== MODEL YANG TERSEDIA =====");
 
+try {
+  const pager = await ai.models.list();
+
+  for await (const model of pager) {
+    console.log(model.name);
+  }
+} catch (e) {
+  console.error("Gagal mengambil daftar model:", e);
+}
+
+const result = await ai.models.generateContent({
 const result = await ai.models.generateContent({
   model: "gemini-2.5-flash",
   contents: history,
