@@ -4,14 +4,16 @@ import HeroBanner from "./components/HeroBanner";
 import InitiativesOverview from "./components/InitiativesOverview";
 import GreenCalculator from "./components/GreenCalculator";
 import ActionLogger from "./components/ActionLogger";
+import LatestArticles, { FEATURED_ARTICLES, ARTICLES_DATA } from "./components/LatestArticles";
+import ContactUs from "./components/ContactUs";
 import EcoQuiz from "./components/EcoQuiz";
 import AiAssistant from "./components/AiAssistant";
 import FirebaseManager from "./components/FirebaseManager";
 import AdminPanel from "./components/AdminPanel";
-import { LoggedAction, GreenActionTemplate, QuizQuestion } from "./types";
+import { LoggedAction, GreenActionTemplate, QuizQuestion, FeaturedArticle, Article } from "./types";
 import { SEED_LOGGED_ACTIONS, GREEN_ACTION_TEMPLATES, INITIAL_QUIZ_QUESTIONS } from "./data";
 import { isFirebaseConnected, subscribeToActions, saveActionToFirestore } from "./firebase";
-import { Leaf, Trophy, Calculator, HelpCircle, Sparkles, Star, Trees, Settings, Lock, Unlock, AlertTriangle, X } from "lucide-react";
+import { Leaf, Trophy, Calculator, HelpCircle, Sparkles, Star, Trees, Settings, Lock, Unlock, AlertTriangle, X, Key, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 const DEFAULT_ANNOUNCEMENTS = [
@@ -59,6 +61,8 @@ export default function App() {
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [announcements, setAnnouncements] = useState<string[]>([]);
   const [heroSlides, setHeroSlides] = useState<{ title: string; subtitle: string; buttonText: string }[]>([]);
+  const [featuredArticles, setFeaturedArticles] = useState<FeaturedArticle[]>([]);
+  const [articles, setArticles] = useState<Article[]>([]);
 
   // Load and sync all stateful data
   useEffect(() => {
@@ -108,6 +112,30 @@ export default function App() {
       }
     } else {
       setHeroSlides(DEFAULT_SLIDES);
+    }
+
+    // 5. Featured Articles
+    const storedFeat = localStorage.getItem("riau_darling_feat_articles");
+    if (storedFeat) {
+      try {
+        setFeaturedArticles(JSON.parse(storedFeat));
+      } catch (e) {
+        setFeaturedArticles(FEATURED_ARTICLES);
+      }
+    } else {
+      setFeaturedArticles(FEATURED_ARTICLES);
+    }
+
+    // 6. Conservation/News Articles
+    const storedArt = localStorage.getItem("riau_darling_articles");
+    if (storedArt) {
+      try {
+        setArticles(JSON.parse(storedArt));
+      } catch (e) {
+        setArticles(ARTICLES_DATA);
+      }
+    } else {
+      setArticles(ARTICLES_DATA);
     }
   }, []);
 
@@ -173,6 +201,16 @@ export default function App() {
     localStorage.setItem("riau_darling_slides", JSON.stringify(newSlides));
   };
 
+  const handleUpdateFeaturedArticles = (newFeat: FeaturedArticle[]) => {
+    setFeaturedArticles(newFeat);
+    localStorage.setItem("riau_darling_feat_articles", JSON.stringify(newFeat));
+  };
+
+  const handleUpdateArticles = (newArticles: Article[]) => {
+    setArticles(newArticles);
+    localStorage.setItem("riau_darling_articles", JSON.stringify(newArticles));
+  };
+
   const handleResetAllData = () => {
     // Clear custom data
     localStorage.removeItem("riau_darling_templates");
@@ -180,6 +218,8 @@ export default function App() {
     localStorage.removeItem("riau_darling_actions");
     localStorage.removeItem("riau_darling_announcements");
     localStorage.removeItem("riau_darling_slides");
+    localStorage.removeItem("riau_darling_feat_articles");
+    localStorage.removeItem("riau_darling_articles");
 
     // Re-seed from hardcoded source
     setActionTemplates(GREEN_ACTION_TEMPLATES);
@@ -187,12 +227,16 @@ export default function App() {
     setLoggedActions(SEED_LOGGED_ACTIONS);
     setAnnouncements(DEFAULT_ANNOUNCEMENTS);
     setHeroSlides(DEFAULT_SLIDES);
+    setFeaturedArticles(FEATURED_ARTICLES);
+    setArticles(ARTICLES_DATA);
 
     localStorage.setItem("riau_darling_actions", JSON.stringify(SEED_LOGGED_ACTIONS));
     localStorage.setItem("riau_darling_templates", JSON.stringify(GREEN_ACTION_TEMPLATES));
     localStorage.setItem("riau_darling_quizzes", JSON.stringify(INITIAL_QUIZ_QUESTIONS));
     localStorage.setItem("riau_darling_announcements", JSON.stringify(DEFAULT_ANNOUNCEMENTS));
     localStorage.setItem("riau_darling_slides", JSON.stringify(DEFAULT_SLIDES));
+    localStorage.setItem("riau_darling_feat_articles", JSON.stringify(FEATURED_ARTICLES));
+    localStorage.setItem("riau_darling_articles", JSON.stringify(ARTICLES_DATA));
   };
 
   // Callback to add a new green action logged by employee
@@ -258,7 +302,8 @@ export default function App() {
 
   const handleVerifyAdminPin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (pinInput === "admin123" || pinInput === "adminriau") {
+    const customPass = localStorage.getItem("riau_darling_admin_password") || "adminriau";
+    if (pinInput === customPass || pinInput === "admin123" || pinInput === "adminriau") {
       setIsAdmin(true);
       sessionStorage.setItem("riau_darling_is_admin", "true");
       setIsLoginModalOpen(false);
@@ -266,7 +311,7 @@ export default function App() {
       setAuthError("");
       setActiveTab("admin");
     } else {
-      setAuthError("Kode PIN salah. Silakan hubungi Bidang SKKI Kanwil DJPb Riau.");
+      setAuthError("Kode PIN / Password Admin salah. Silakan periksa kembali.");
     }
   };
 
@@ -281,6 +326,19 @@ export default function App() {
         <HeroBanner 
           onStartQuiz={() => setActiveTab("quiz")} 
           onOpenAssistant={() => setActiveTab("assistant")} 
+          onNavigateTab={(tabId, elementId) => {
+            setActiveTab(tabId as any);
+            if (elementId) {
+              setTimeout(() => {
+                const el = document.getElementById(elementId);
+                if (el) {
+                  el.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+              }, 150);
+            } else {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+          }}
           announcements={announcements}
           heroSlides={heroSlides}
         />
@@ -322,7 +380,7 @@ export default function App() {
             );
           })}
 
-          {/* Secure Admin Access Trigger Button */}
+          {/* Secure Admin Access Trigger Button at the far right of the main navigation menu */}
           {!isAdmin ? (
             <button
               onClick={() => {
@@ -330,27 +388,33 @@ export default function App() {
                 setPinInput("");
                 setIsLoginModalOpen(true);
               }}
-              className="ml-auto flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 rounded-xl text-xs font-bold transition-all border border-slate-200/60 active:scale-95 cursor-pointer"
-              title="Akses Kontrol Admin"
+              className="ml-auto flex items-center gap-2 px-3.5 py-2.5 bg-emerald-900 hover:bg-emerald-950 active:scale-95 text-amber-300 hover:text-amber-200 rounded-xl text-xs font-bold transition-all shadow-sm border border-emerald-800/80 cursor-pointer flex-shrink-0"
+              title="Akses Login Admin Kanwil DJPb Riau"
               id="admin-login-trigger"
             >
-              <Lock className="h-3.5 w-3.5 text-slate-400 hover:text-emerald-600" />
-              <span className="hidden sm:inline">Admin Login</span>
+              <Key className="h-4 w-4 text-amber-400" />
+              <span>Admin Login</span>
             </button>
           ) : (
-            <button
-              onClick={() => {
-                setIsAdmin(false);
-                sessionStorage.removeItem("riau_darling_is_admin");
-                setActiveTab("dashboard");
-              }}
-              className="ml-auto flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold transition-all border border-red-200/60 active:scale-95 cursor-pointer"
-              title="Logout Administrator"
-              id="admin-logout-trigger"
-            >
-              <Unlock className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Keluar Admin</span>
-            </button>
+            <div className="ml-auto flex items-center gap-2 flex-shrink-0">
+              <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-200 hidden sm:flex items-center gap-1">
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-700" />
+                <span>Admin Aktif</span>
+              </span>
+              <button
+                onClick={() => {
+                  setIsAdmin(false);
+                  sessionStorage.removeItem("riau_darling_is_admin");
+                  setActiveTab("dashboard");
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl text-xs font-bold transition-all border border-red-200/80 active:scale-95 cursor-pointer"
+                title="Keluar dari Sesi Administrator"
+                id="admin-logout-trigger"
+              >
+                <Unlock className="h-3.5 w-3.5 text-red-600" />
+                <span>Keluar Admin</span>
+              </button>
+            </div>
           )}
         </div>
 
@@ -372,6 +436,18 @@ export default function App() {
                 actionTemplates={actionTemplates}
                 onAddAction={handleAddAction} 
               />
+
+              {/* Latest Articles section with full Admin authority */}
+              <LatestArticles 
+                featuredArticles={featuredArticles} 
+                articles={articles} 
+                isAdmin={isAdmin}
+                onUpdateFeaturedArticles={handleUpdateFeaturedArticles}
+                onUpdateArticles={handleUpdateArticles}
+              />
+
+              {/* Contact Us section immediately after Latest Articles */}
+              <ContactUs />
             </motion.div>
           )}
 
@@ -432,6 +508,10 @@ export default function App() {
                   sessionStorage.removeItem("riau_darling_is_admin");
                   setActiveTab("dashboard");
                 }}
+                featuredArticles={featuredArticles}
+                articles={articles}
+                onUpdateFeaturedArticles={handleUpdateFeaturedArticles}
+                onUpdateArticles={handleUpdateArticles}
               />
             </motion.div>
           )}
