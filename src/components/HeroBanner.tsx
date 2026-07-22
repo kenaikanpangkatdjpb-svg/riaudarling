@@ -18,6 +18,7 @@ import { motion, AnimatePresence } from "motion/react";
 interface HeroBannerProps {
   onStartQuiz: () => void;
   onOpenAssistant: () => void;
+  onNavigateTab?: (tabId: string, elementId?: string) => void;
   announcements: string[];
   heroSlides: { title: string; subtitle: string; buttonText: string }[];
 }
@@ -25,6 +26,7 @@ interface HeroBannerProps {
 export default function HeroBanner({ 
   onStartQuiz, 
   onOpenAssistant, 
+  onNavigateTab,
   announcements, 
   heroSlides 
 }: HeroBannerProps) {
@@ -303,8 +305,8 @@ export default function HeroBanner({
 
         {/* Center Section: Responsive Navigation Links */}
         <div className="hidden lg:flex items-center gap-1.5 xl:gap-2 text-[12px] font-extrabold text-white/90 tracking-wider">
-          {/* Active green pill link exactly like in the picture */}
           <button 
+            onClick={() => onNavigateTab ? onNavigateTab("dashboard") : window.scrollTo({ top: 0, behavior: "smooth" })}
             className="px-5 py-2.5 bg-[#00a859] text-white rounded-xl shadow-md cursor-pointer transition-all hover:bg-[#00924d] active:scale-95 flex items-center gap-1 font-extrabold"
           >
             Beranda
@@ -318,39 +320,36 @@ export default function HeroBanner({
           </button>
           
           <button 
-            onClick={onOpenAssistant}
+            onClick={() => {
+              if (onNavigateTab) {
+                onNavigateTab("dashboard", "latest-articles-section");
+              } else {
+                document.getElementById("latest-articles-section")?.scrollIntoView({ behavior: "smooth" });
+              }
+            }}
             className="px-4 py-2 hover:bg-white/10 text-white rounded-xl transition-all cursor-pointer font-bold"
           >
-            Berita & Informasi
+            Artikel Terbaru
           </button>
           
           <button 
-            onClick={onOpenAssistant}
+            onClick={() => {
+              if (onNavigateTab) {
+                onNavigateTab("dashboard", "contact-us-section");
+              } else {
+                document.getElementById("contact-us-section")?.scrollIntoView({ behavior: "smooth" });
+              }
+            }}
             className="px-4 py-2 hover:bg-white/10 text-white rounded-xl transition-all cursor-pointer font-bold"
           >
-            Galeri
+            Kontak Kami
           </button>
           
-          <button 
-            onClick={onOpenAssistant}
-            className="px-4 py-2 hover:bg-white/10 text-white rounded-xl transition-all cursor-pointer font-bold"
-          >
-            Eselon 1
-          </button>
-          
-          <button 
-            onClick={onOpenAssistant}
-            className="px-4 py-2 hover:bg-white/10 text-white rounded-xl transition-all cursor-pointer font-bold"
-          >
-            Dokumen Kementerian
-          </button>
-
-          {/* Special AYOTANAMPOHON highlighted link */}
           <button 
             onClick={onStartQuiz}
-            className="px-4 py-2.5 border border-emerald-400/40 hover:border-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 hover:text-white rounded-xl transition-all font-black text-xs tracking-widest cursor-pointer ml-1 active:scale-95 uppercase"
+            className="px-5 py-2.5 border border-emerald-400/40 hover:border-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 hover:text-white rounded-xl transition-all font-black text-xs tracking-widest cursor-pointer ml-1 active:scale-95 uppercase"
           >
-            AYOTANAMPOHON
+            Dukung Kami
           </button>
         </div>
 
@@ -389,11 +388,60 @@ export default function HeroBanner({
             className="relative z-30 bg-[#041a10]/95 backdrop-blur-md border-b border-emerald-900/40 px-6 py-4 flex flex-col gap-3 lg:hidden"
           >
             <div className="text-[10px] font-black text-emerald-400 uppercase tracking-widest border-b border-emerald-900/50 pb-1.5">Navigasi</div>
-            <button onClick={() => { onOpenAssistant(); setIsMenuOpen(false); }} className="text-left text-xs font-bold py-1.5 text-white hover:text-emerald-300 transition-colors">Beranda</button>
-            <button onClick={() => { onOpenAssistant(); setIsMenuOpen(false); }} className="text-left text-xs font-bold py-1.5 text-white hover:text-emerald-300 transition-colors">Profil</button>
-            <button onClick={() => { onOpenAssistant(); setIsMenuOpen(false); }} className="text-left text-xs font-bold py-1.5 text-white hover:text-emerald-300 transition-colors">Berita & Informasi</button>
-            <button onClick={() => { onOpenAssistant(); setIsMenuOpen(false); }} className="text-left text-xs font-bold py-1.5 text-white hover:text-emerald-300 transition-colors">Galeri</button>
-            <button onClick={() => { onStartQuiz(); setIsMenuOpen(false); }} className="text-left text-xs font-extrabold py-2 text-emerald-300 hover:text-white transition-colors bg-emerald-950/40 px-3 rounded-lg border border-emerald-800/30">AYO TANAM POHON</button>
+            <button 
+              onClick={() => { 
+                if (onNavigateTab) onNavigateTab("dashboard"); 
+                else window.scrollTo({ top: 0, behavior: "smooth" }); 
+                setIsMenuOpen(false); 
+              }} 
+              className="text-left text-xs font-bold py-1.5 text-white hover:text-emerald-300 transition-colors"
+            >
+              Beranda
+            </button>
+            <button 
+              onClick={() => { 
+                onOpenAssistant(); 
+                setIsMenuOpen(false); 
+              }} 
+              className="text-left text-xs font-bold py-1.5 text-white hover:text-emerald-300 transition-colors"
+            >
+              Profil
+            </button>
+            <button 
+              onClick={() => { 
+                if (onNavigateTab) {
+                  onNavigateTab("dashboard", "latest-articles-section");
+                } else {
+                  document.getElementById("latest-articles-section")?.scrollIntoView({ behavior: "smooth" });
+                }
+                setIsMenuOpen(false); 
+              }} 
+              className="text-left text-xs font-bold py-1.5 text-white hover:text-emerald-300 transition-colors"
+            >
+              Artikel Terbaru
+            </button>
+            <button 
+              onClick={() => { 
+                if (onNavigateTab) {
+                  onNavigateTab("dashboard", "contact-us-section");
+                } else {
+                  document.getElementById("contact-us-section")?.scrollIntoView({ behavior: "smooth" });
+                }
+                setIsMenuOpen(false); 
+              }} 
+              className="text-left text-xs font-bold py-1.5 text-white hover:text-emerald-300 transition-colors"
+            >
+              Kontak Kami
+            </button>
+            <button 
+              onClick={() => { 
+                onStartQuiz(); 
+                setIsMenuOpen(false); 
+              }} 
+              className="text-left text-xs font-extrabold py-2 text-emerald-300 hover:text-white transition-colors bg-emerald-950/40 px-3 rounded-lg border border-emerald-800/30 text-center uppercase"
+            >
+              Dukung Kami
+            </button>
             
             {/* Search Input for Mobile */}
             <div className="relative mt-2">

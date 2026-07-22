@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { QuizQuestion } from "../types";
-import { HelpCircle, Award, CheckCircle2, AlertTriangle, ArrowRight, RotateCcw, ShieldCheck, BookOpen } from "lucide-react";
+import { HelpCircle, Award, CheckCircle2, AlertTriangle, ArrowRight, RotateCcw, ShieldCheck, BookOpen, Leaf, Users } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 interface EcoQuizProps {
@@ -107,34 +107,72 @@ export default function EcoQuiz({ quizQuestions, onEarnPoints }: EcoQuizProps) {
   return (
     <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100" id="eco-quiz">
       {gameState === "welcome" && (
-        <div className="text-center py-8 px-4 max-w-xl mx-auto">
-          <div className="h-16 w-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
-            <HelpCircle className="h-8 w-8 animate-bounce" />
+        <div className="space-y-8 animate-fadeIn">
+          {/* THE REQUESTED BANNER FROM IMAGE */}
+          <div className="bg-[#ecf7ff] rounded-3xl py-12 px-6 sm:px-10 text-center border border-sky-100 shadow-sm">
+            <h2 className="text-2xl sm:text-4xl font-extrabold text-[#0ea5e9] tracking-tight mb-4">
+              Ayo Menjadi Bagian dari Komunitas!
+            </h2>
+            <p className="text-slate-600 text-sm sm:text-base max-w-4xl mx-auto leading-relaxed mb-4">
+              Jadilah bagian dari upaya konservasi yang nyata, transparan, dan berkelanjutan. Temukan bentuk keterlibatan yang sesuai dengan kepedulian Anda.
+            </p>
+            <p className="text-slate-900 font-extrabold text-sm sm:text-base">
+              Bergerak Bersama, Ciptakan Dampak bagi Alam Indonesia!
+            </p>
           </div>
-          <span className="px-3 py-1 bg-amber-100 text-amber-800 text-xs font-bold rounded-full uppercase tracking-wider">
-            Edukasi & Refleksi
-          </span>
-          <h3 className="text-xl font-bold text-slate-800 mt-3 mb-2">Kuis Sadar Lingkungan Riau Darling</h3>
-          <p className="text-slate-500 text-sm mb-6 leading-relaxed">
-            Uji pemahaman Tuan & Puan mengenai budaya pelestarian alam Riau, regulasi eco-office, dan tips menghemat emisi karbon di kantor DJPb.
-          </p>
-          <div className="bg-slate-50 border border-slate-100 p-4 rounded-2xl text-xs text-left mb-6 space-y-2">
-            <div className="flex items-center gap-2 font-bold text-slate-700">
-              <ShieldCheck className="h-4 w-4 text-emerald-600" />
-              Ketentuan Kuis:
+
+          {/* Interactive Involvement Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            {/* OPTION 1: PLAY QUIZ */}
+            <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="h-12 w-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center">
+                  <HelpCircle className="h-6 w-6" />
+                </div>
+                <h4 className="font-extrabold text-slate-900 text-lg">Kuis Sadar Lingkungan</h4>
+                <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
+                  Uji pemahaman Anda mengenai budaya pelestarian alam Riau, eco-office, dan emisi karbon. Dapatkan skor dan bonus poin untuk leaderboard!
+                </p>
+              </div>
+              <button
+                onClick={handleStartQuiz}
+                className="mt-6 w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white rounded-xl text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>Mulai Kuis Sekarang</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
             </div>
-            <ul className="list-disc list-inside space-y-1 text-slate-500 pl-1">
-              <li>Terdapat <strong>8 Pertanyaan pilihan ganda</strong>.</li>
-              <li>Poin kuis akan langsung diakumulasikan ke papan skor utama.</li>
-              <li>Setiap pertanyaan memiliki penjelasan detail untuk mengedukasi kita semua.</li>
-            </ul>
+
+            {/* OPTION 2: CONTRIBUTE ACTIONS */}
+            <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="h-12 w-12 bg-sky-50 text-sky-600 rounded-2xl flex items-center justify-center">
+                  <Leaf className="h-6 w-6" />
+                </div>
+                <h4 className="font-extrabold text-slate-900 text-lg">Aksi Nyata Hijau</h4>
+                <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
+                  Laporkan kontribusi Anda dalam menanam pohon, menghemat energi, menggunakan tumbler, atau digitalisasi dokumen untuk melestarikan lingkungan.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  // Navigate to Beranda first, then scroll to action logger
+                  const el = document.getElementById("action-logger-section");
+                  if (el) {
+                    el.scrollIntoView({ behavior: "smooth", block: "start" });
+                  } else {
+                    // Trigger click on Beranda if it's not active, but let's try to locate element
+                    const berandaBtn = document.querySelector('[id^="main-content-panel"]');
+                    window.scrollTo({ top: document.body.scrollHeight / 2, behavior: "smooth" });
+                  }
+                }}
+                className="mt-6 w-full py-3 bg-slate-900 hover:bg-slate-800 active:scale-[0.98] text-white rounded-xl text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>Laporkan Aksi Nyata</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
-          <button
-            onClick={handleStartQuiz}
-            className="px-8 py-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition-all"
-          >
-            Mulai Kuis Sekarang
-          </button>
         </div>
       )}
 

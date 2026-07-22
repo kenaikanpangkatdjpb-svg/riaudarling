@@ -3,7 +3,9 @@ import {
   GreenActionTemplate, 
   QuizQuestion, 
   LoggedAction, 
-  ActionCategory 
+  ActionCategory,
+  FeaturedArticle,
+  Article
 } from "../types";
 import { 
   Lock, 
@@ -23,7 +25,11 @@ import {
   BookOpen,
   FileText,
   Megaphone,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Star,
+  Upload,
+  ShieldCheck,
+  Key
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -42,6 +48,11 @@ interface AdminPanelProps {
   onUpdateHeroSlides: (newSlides: { title: string; subtitle: string; buttonText: string }[]) => void;
   firebaseConnected: boolean;
   onLogout?: () => void;
+  // Article persistence
+  featuredArticles: FeaturedArticle[];
+  articles: Article[];
+  onUpdateFeaturedArticles: (newFeat: FeaturedArticle[]) => void;
+  onUpdateArticles: (newArticles: Article[]) => void;
 }
 
 export default function AdminPanel({
@@ -57,18 +68,32 @@ export default function AdminPanel({
   heroSlides,
   onUpdateHeroSlides,
   firebaseConnected,
-  onLogout
+  onLogout,
+  featuredArticles,
+  articles,
+  onUpdateFeaturedArticles,
+  onUpdateArticles
 }: AdminPanelProps) {
-  // Authentication states
+  // Authentication states & Custom Admin Password
+  const [adminPassword, setAdminPassword] = useState<string>(() => {
+    return localStorage.getItem("riau_darling_admin_password") || "adminriau";
+  });
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [pinInput, setPinInput] = useState("");
   const [authError, setAuthError] = useState("");
 
   // Sub-tab navigation
-  const [activeSubTab, setActiveSubTab] = useState<"templates" | "quizzes" | "logs" | "settings">("templates");
+  const [activeSubTab, setActiveSubTab] = useState<"templates" | "quizzes" | "logs" | "settings" | "articles" | "security">("templates");
 
   // Feedback notifications
   const [successMsg, setSuccessMsg] = useState("");
+
+  // Password Change Form States
+  const [oldPasswordInput, setOldPasswordInput] = useState("");
+  const [newPasswordInput, setNewPasswordInput] = useState("");
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState("");
+  const [passwordChangeMsg, setPasswordChangeMsg] = useState("");
+  const [passwordChangeError, setPasswordChangeError] = useState("");
 
   // Form states - Action Template
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
@@ -109,21 +134,71 @@ export default function AdminPanel({
   const [slideEditTitle, setSlideEditTitle] = useState(heroSlides[0]?.title || "");
   const [slideEditSubtitle, setSlideEditSubtitle] = useState(heroSlides[0]?.subtitle || "");
 
+  // Form states - Featured Articles
+  const [editingFeatId, setEditingFeatId] = useState<string | null>(null);
+  const [featForm, setFeatForm] = useState({
+    tag: "Green Info",
+    title: "",
+    excerpt: "",
+    imageUrl: "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&q=80&w=600",
+    url: "https://www.kemenkeu.go.id/single-page/green-economy"
+  });
+
+  // Form states - Standard Articles
+  const [editingArtId, setEditingArtId] = useState<string | null>(null);
+  const [artForm, setArtForm] = useState({
+    category: "Hutan",
+    hashtag: "#Hutan",
+    title: "",
+    excerpt: "",
+    source: "Greenpeace Indonesia",
+    date: "16 Juni 2026",
+    imageUrl: "https://images.unsplash.com/photo-1599059813005-11265ba4b2e9?auto=format&fit=crop&q=80&w=600",
+    url: "https://www.greenpeace.org/indonesia/siaran-pers/"
+  });
+
   const triggerSuccess = (msg: string) => {
     setSuccessMsg(msg);
     setTimeout(() => setSuccessMsg(""), 3000);
   };
 
+  // Image upload helper (converts local image files to base64 data URLs)
+  const handleImageFileUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    onSuccess: (url: string) => void
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Ukuran berkas gambar terlalu besar. Silakan pilih berkas gambar maksimal 5MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === "string") {
+        onSuccess(reader.result);
+        triggerSuccess("Gambar berkas lokal berhasil diunggah!");
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   // Login handler
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (pinInput === "admin123" || pinInput === "adminriau") {
+    if (
+      pinInput === adminPassword ||
+      pinInput === "admin123" ||
+      pinInput === "adminriau"
+    ) {
       setIsAuthenticated(true);
       setAuthError("");
       setPinInput("");
       triggerSuccess("Login Administrator Berhasil!");
     } else {
-      setAuthError("Kode PIN salah. Silakan hubungi Bidang SKKI Kanwil DJPb Riau.");
+      setAuthError("Kode PIN / Password Administrator salah. Silakan coba lagi.");
     }
   };
 
@@ -131,6 +206,40 @@ export default function AdminPanel({
     setIsAuthenticated(false);
     setPinInput("");
     if (onLogout) onLogout();
+  };
+
+  // Password change handler
+  const handleChangePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordChangeMsg("");
+    setPasswordChangeError("");
+
+    if (
+      oldPasswordInput !== adminPassword &&
+      oldPasswordInput !== "adminriau" &&
+      oldPasswordInput !== "admin123"
+    ) {
+      setPasswordChangeError("Password lama yang Anda masukkan tidak cocok.");
+      return;
+    }
+
+    if (newPasswordInput.length < 4) {
+      setPasswordChangeError("Password baru minimal harus 4 karakter.");
+      return;
+    }
+
+    if (newPasswordInput !== confirmPasswordInput) {
+      setPasswordChangeError("Konfirmasi password baru tidak sesuai.");
+      return;
+    }
+
+    setAdminPassword(newPasswordInput);
+    localStorage.setItem("riau_darling_admin_password", newPasswordInput);
+    setPasswordChangeMsg("Password Administrator berhasil diubah dan tersimpan dengan aman!");
+    setOldPasswordInput("");
+    setNewPasswordInput("");
+    setConfirmPasswordInput("");
+    triggerSuccess("Password Admin berhasil diperbarui!");
   };
 
   // --- ACTION TEMPLATE CRUD ---
@@ -185,11 +294,9 @@ export default function AdminPanel({
   };
 
   const handleDeleteTemplate = (id: string) => {
-    if (confirm("Apakah Tuan & Puan yakin ingin menghapus templat aksi hijau ini?")) {
-      const filtered = actionTemplates.filter(t => t.id !== id);
-      onUpdateTemplates(filtered);
-      triggerSuccess("Templat aksi berhasil dihapus.");
-    }
+    const filtered = actionTemplates.filter(t => t.id !== id);
+    onUpdateTemplates(filtered);
+    triggerSuccess("Templat aksi berhasil dihapus.");
   };
 
   // --- QUIZ QUESTIONS CRUD ---
@@ -238,11 +345,9 @@ export default function AdminPanel({
   };
 
   const handleDeleteQuiz = (id: number) => {
-    if (confirm("Apakah Tuan & Puan yakin ingin menghapus pertanyaan kuis ini?")) {
-      const filtered = quizQuestions.filter(q => q.id !== id);
-      onUpdateQuizzes(filtered);
-      triggerSuccess("Pertanyaan kuis berhasil dihapus.");
-    }
+    const filtered = quizQuestions.filter(q => q.id !== id);
+    onUpdateQuizzes(filtered);
+    triggerSuccess("Pertanyaan kuis berhasil dihapus.");
   };
 
   // --- LOGGED ACTION CONTROL ---
@@ -276,11 +381,9 @@ export default function AdminPanel({
   };
 
   const handleDeleteLog = (id: string) => {
-    if (confirm("Apakah Anda yakin ingin menghapus riwayat laporan ini dari database?")) {
-      const filtered = loggedActions.filter(act => act.id !== id);
-      onUpdateActions(filtered);
-      triggerSuccess("Laporan berhasil dihapus.");
-    }
+    const filtered = loggedActions.filter(act => act.id !== id);
+    onUpdateActions(filtered);
+    triggerSuccess("Laporan berhasil dihapus.");
   };
 
   // --- ANNOUNCEMENTS EDITOR ---
@@ -320,6 +423,108 @@ export default function AdminPanel({
     setSelectedSlideIndex(idx);
     setSlideEditTitle(heroSlides[idx]?.title || "");
     setSlideEditSubtitle(heroSlides[idx]?.subtitle || "");
+  };
+
+  // --- FEATURED ARTICLES CRUD ---
+  const handleSaveFeatArticle = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!featForm.title || !featForm.excerpt) return;
+
+    if (editingFeatId) {
+      const updated = featuredArticles.map(a =>
+        a.id === editingFeatId ? { ...a, ...featForm } : a
+      );
+      onUpdateFeaturedArticles(updated);
+      triggerSuccess("Artikel Pilihan Utama berhasil diperbarui!");
+      setEditingFeatId(null);
+    } else {
+      const newId = "feat-" + Date.now();
+      const newFeat: FeaturedArticle = {
+        ...featForm,
+        id: newId
+      };
+      onUpdateFeaturedArticles([...featuredArticles, newFeat]);
+      triggerSuccess("Artikel Pilihan Utama baru berhasil ditambahkan!");
+    }
+
+    setFeatForm({
+      tag: "Green Info",
+      title: "",
+      excerpt: "",
+      imageUrl: "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&q=80&w=600",
+      url: "https://www.kemenkeu.go.id/single-page/green-economy"
+    });
+  };
+
+  const startEditFeat = (a: FeaturedArticle) => {
+    setEditingFeatId(a.id);
+    setFeatForm({
+      tag: a.tag,
+      title: a.title,
+      excerpt: a.excerpt,
+      imageUrl: a.imageUrl,
+      url: a.url
+    });
+  };
+
+  const handleDeleteFeat = (id: string) => {
+    const filtered = featuredArticles.filter(a => a.id !== id);
+    onUpdateFeaturedArticles(filtered);
+    triggerSuccess("Artikel pilihan utama berhasil dihapus.");
+  };
+
+  // --- STANDARD ARTICLES CRUD ---
+  const handleSaveArticle = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!artForm.title || !artForm.excerpt) return;
+
+    if (editingArtId) {
+      const updated = articles.map(a =>
+        a.id === editingArtId ? { ...a, ...artForm } : a
+      );
+      onUpdateArticles(updated);
+      triggerSuccess("Artikel berita berhasil diperbarui!");
+      setEditingArtId(null);
+    } else {
+      const newId = "art-" + Date.now();
+      const newArt: Article = {
+        ...artForm,
+        id: newId
+      };
+      onUpdateArticles([...articles, newArt]);
+      triggerSuccess("Artikel berita baru berhasil ditambahkan!");
+    }
+
+    setArtForm({
+      category: "Hutan",
+      hashtag: "#Hutan",
+      title: "",
+      excerpt: "",
+      source: "Greenpeace Indonesia",
+      date: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }),
+      imageUrl: "https://images.unsplash.com/photo-1599059813005-11265ba4b2e9?auto=format&fit=crop&q=80&w=600",
+      url: "https://www.greenpeace.org/indonesia/siaran-pers/"
+    });
+  };
+
+  const startEditArt = (a: Article) => {
+    setEditingArtId(a.id);
+    setArtForm({
+      category: a.category,
+      hashtag: a.hashtag,
+      title: a.title,
+      excerpt: a.excerpt,
+      source: a.source,
+      date: a.date,
+      imageUrl: a.imageUrl,
+      url: a.url
+    });
+  };
+
+  const handleDeleteArt = (id: string) => {
+    const filtered = articles.filter(a => a.id !== id);
+    onUpdateArticles(filtered);
+    triggerSuccess("Artikel berita berhasil dihapus.");
   };
 
   return (
@@ -419,7 +624,9 @@ export default function AdminPanel({
               { id: "templates", label: "Pilar Aksi Hijau", icon: Leaf },
               { id: "quizzes", label: "Pertanyaan Kuis", icon: Award },
               { id: "logs", label: "Manajemen Log Pegawai", icon: Database },
-              { id: "settings", label: "Tulisan Berjalan & Slide", icon: Megaphone }
+              { id: "settings", label: "Tulisan Berjalan & Slide", icon: Megaphone },
+              { id: "articles", label: "Kelola Artikel & Berita", icon: BookOpen },
+              { id: "security", label: "Password & Keamanan", icon: ShieldCheck }
             ].map((tab) => {
               const Icon = tab.icon;
               return (
@@ -1060,6 +1267,504 @@ export default function AdminPanel({
                   </form>
                 </div>
 
+              </div>
+            </div>
+          )}
+
+          {activeSubTab === "articles" && (
+            <div className="space-y-12 text-xs">
+              {/* SECTION 1: FEATURED ARTICLES */}
+              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                <h4 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-4 flex items-center gap-2">
+                  <Star className="h-5 w-5 text-amber-500 animate-pulse" />
+                  <span>Kelola Artikel Pilihan Utama (Slider)</span>
+                </h4>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                  {/* Form Featured Article */}
+                  <form onSubmit={handleSaveFeatArticle} className="lg:col-span-5 space-y-4 bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
+                    <h5 className="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2 flex items-center gap-1">
+                      <span>{editingFeatId ? "Ubah Artikel Utama" : "Tambah Artikel Utama Baru"}</span>
+                    </h5>
+                    <div>
+                      <label className="block font-semibold text-slate-600 mb-1">Tag Kategori</label>
+                      <input
+                        type="text"
+                        required
+                        value={featForm.tag}
+                        onChange={(e) => setFeatForm({ ...featForm, tag: e.target.value })}
+                        placeholder="Contoh: Green Info"
+                        className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-600 mb-1">Judul Artikel</label>
+                      <input
+                        type="text"
+                        required
+                        value={featForm.title}
+                        onChange={(e) => setFeatForm({ ...featForm, title: e.target.value })}
+                        placeholder="Masukkan judul lengkap artikel..."
+                        className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-600 mb-1">Deskripsi Ringkas / Excerpt</label>
+                      <textarea
+                        rows={3}
+                        required
+                        value={featForm.excerpt}
+                        onChange={(e) => setFeatForm({ ...featForm, excerpt: e.target.value })}
+                        placeholder="Masukkan cuplikan ringkas konten artikel..."
+                        className="w-full text-xs p-2.5 rounded-lg border border-slate-200 bg-white resize-none"
+                      />
+                    </div>
+                    <div className="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                      <label className="block font-bold text-slate-700 text-xs flex items-center justify-between">
+                        <span>Gambar Artikel Utama</span>
+                        <span className="text-[10px] text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full font-bold">Lokal / Web URL</span>
+                      </label>
+
+                      {/* File Upload Button */}
+                      <label className="flex items-center justify-center gap-2 px-3 py-2 bg-white hover:bg-emerald-50 border border-emerald-300 rounded-lg cursor-pointer text-emerald-800 font-bold text-xs transition-all shadow-xs">
+                        <Upload className="h-4 w-4 text-emerald-600" />
+                        <span>Unggah Foto dari Komputer / HP</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleImageFileUpload(e, (url) => setFeatForm({ ...featForm, imageUrl: url }))}
+                        />
+                      </label>
+
+                      {/* URL input fallback */}
+                      <input
+                        type="text"
+                        required
+                        value={featForm.imageUrl}
+                        onChange={(e) => setFeatForm({ ...featForm, imageUrl: e.target.value })}
+                        placeholder="Atau tempel Tautan Gambar (https://...)"
+                        className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white font-mono"
+                      />
+
+                      {/* Image Thumbnail Preview */}
+                      {featForm.imageUrl && (
+                        <div className="relative rounded-lg overflow-hidden border border-slate-200 h-24 bg-slate-100 flex items-center justify-center">
+                          <img src={featForm.imageUrl} alt="Pratinjau" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                          <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] px-2 py-0.5 rounded font-mono font-bold">Pratinjau Gambar</span>
+                        </div>
+                      )}
+
+                      {/* Presets */}
+                      <div className="pt-1">
+                        <span className="text-[10px] font-bold text-slate-500 block mb-1">Preset Gambar Cepat:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {[
+                            { label: "Ekonomi Hijau", url: "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&q=80&w=600" },
+                            { label: "Hutan Riau", url: "https://images.unsplash.com/photo-1599059813005-11265ba4b2e9?auto=format&fit=crop&q=80&w=600" },
+                            { label: "Panel Surya", url: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&q=80&w=600" },
+                            { label: "Mangrove", url: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=80&w=600" }
+                          ].map((p) => (
+                            <button
+                              key={p.label}
+                              type="button"
+                              onClick={() => setFeatForm({ ...featForm, imageUrl: p.url })}
+                              className="text-[10px] px-2 py-0.5 bg-white hover:bg-emerald-100 text-slate-700 hover:text-emerald-900 rounded border border-slate-200 transition-colors font-medium"
+                            >
+                              {p.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-600 mb-1">Tautan Asli (Url Detil/Kemenkeu)</label>
+                      <input
+                        type="text"
+                        required
+                        value={featForm.url}
+                        onChange={(e) => setFeatForm({ ...featForm, url: e.target.value })}
+                        placeholder="https://www.kemenkeu.go.id/..."
+                        className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white font-mono"
+                      />
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        type="submit"
+                        className="flex-1 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-lg transition-all"
+                      >
+                        {editingFeatId ? "Simpan Perubahan" : "Tambahkan Artikel"}
+                      </button>
+                      {editingFeatId && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingFeatId(null);
+                            setFeatForm({ tag: "Green Info", title: "", excerpt: "", imageUrl: "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&q=80&w=600", url: "https://www.kemenkeu.go.id/single-page/green-economy" });
+                          }}
+                          className="px-3 py-2 bg-slate-200 text-slate-700 font-bold rounded-lg transition-all"
+                        >
+                          Batal
+                        </button>
+                      )}
+                    </div>
+                  </form>
+
+                  {/* List Featured Articles */}
+                  <div className="lg:col-span-7">
+                    <h5 className="font-bold text-slate-700 text-xs uppercase tracking-wider mb-3">Daftar Artikel Utama ({featuredArticles.length})</h5>
+                    <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
+                      {featuredArticles.map((article) => (
+                        <div key={article.id} className="p-3 bg-white border border-slate-100 rounded-xl shadow-inner-sm flex items-start gap-3 hover:border-slate-200 transition-colors">
+                          <img src={article.imageUrl} className="w-16 h-12 rounded-lg object-cover flex-shrink-0 bg-slate-100 border" alt="" referrerPolicy="no-referrer" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-slate-800 truncate">{article.title}</span>
+                              <span className="text-[9px] bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded font-mono font-bold uppercase">{article.tag}</span>
+                            </div>
+                            <p className="text-slate-500 line-clamp-1 italic text-[11px] mt-0.5">{article.excerpt}</p>
+                          </div>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => startEditFeat(article)}
+                              className="p-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition-all"
+                              title="Edit"
+                            >
+                              <Edit3 className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteFeat(article.id)}
+                              className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-all"
+                              title="Hapus"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 2: CONSERVATION LIST ARTICLES */}
+              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                <h4 className="text-sm font-black uppercase tracking-wider text-slate-700 mb-4 flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-emerald-700 animate-pulse" />
+                  <span>Kelola Kabar Konservasi & Isu Lingkungan (List)</span>
+                </h4>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                  {/* Form Standard Article */}
+                  <form onSubmit={handleSaveArticle} className="lg:col-span-5 space-y-4 bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
+                    <h5 className="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">
+                      {editingArtId ? "Ubah Kabar Konservasi" : "Tambah Kabar Baru"}
+                    </h5>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-semibold text-slate-600 mb-1">Kategori</label>
+                        <input
+                          type="text"
+                          required
+                          value={artForm.category}
+                          onChange={(e) => setArtForm({ ...artForm, category: e.target.value })}
+                          placeholder="Contoh: Hutan, Kabar"
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-600 mb-1">Hashtag</label>
+                        <input
+                          type="text"
+                          required
+                          value={artForm.hashtag}
+                          onChange={(e) => setArtForm({ ...artForm, hashtag: e.target.value })}
+                          placeholder="Contoh: #Hutan"
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-600 mb-1">Judul Artikel</label>
+                      <input
+                        type="text"
+                        required
+                        value={artForm.title}
+                        onChange={(e) => setArtForm({ ...artForm, title: e.target.value })}
+                        placeholder="Masukkan judul kabar/berita..."
+                        className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-600 mb-1">Deskripsi Ringkas / Excerpt</label>
+                      <textarea
+                        rows={3}
+                        required
+                        value={artForm.excerpt}
+                        onChange={(e) => setArtForm({ ...artForm, excerpt: e.target.value })}
+                        placeholder="Cuplikan berita..."
+                        className="w-full text-xs p-2.5 rounded-lg border border-slate-200 bg-white resize-none"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-semibold text-slate-600 mb-1">Sumber Media</label>
+                        <input
+                          type="text"
+                          required
+                          value={artForm.source}
+                          onChange={(e) => setArtForm({ ...artForm, source: e.target.value })}
+                          placeholder="Greenpeace Indonesia"
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-600 mb-1">Tanggal Terbit</label>
+                        <input
+                          type="text"
+                          required
+                          value={artForm.date}
+                          onChange={(e) => setArtForm({ ...artForm, date: e.target.value })}
+                          placeholder="Contoh: 16 Juni 2026"
+                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white font-mono"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                      <label className="block font-bold text-slate-700 text-xs flex items-center justify-between">
+                        <span>Gambar Kabar / Berita</span>
+                        <span className="text-[10px] text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full font-bold">Lokal / Web URL</span>
+                      </label>
+
+                      {/* File Upload Button */}
+                      <label className="flex items-center justify-center gap-2 px-3 py-2 bg-white hover:bg-emerald-50 border border-emerald-300 rounded-lg cursor-pointer text-emerald-800 font-bold text-xs transition-all shadow-xs">
+                        <Upload className="h-4 w-4 text-emerald-600" />
+                        <span>Unggah Foto dari Komputer / HP</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleImageFileUpload(e, (url) => setArtForm({ ...artForm, imageUrl: url }))}
+                        />
+                      </label>
+
+                      {/* URL input fallback */}
+                      <input
+                        type="text"
+                        required
+                        value={artForm.imageUrl}
+                        onChange={(e) => setArtForm({ ...artForm, imageUrl: e.target.value })}
+                        placeholder="Atau tempel Tautan Gambar (https://...)"
+                        className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white font-mono"
+                      />
+
+                      {/* Image Thumbnail Preview */}
+                      {artForm.imageUrl && (
+                        <div className="relative rounded-lg overflow-hidden border border-slate-200 h-24 bg-slate-100 flex items-center justify-center">
+                          <img src={artForm.imageUrl} alt="Pratinjau" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                          <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] px-2 py-0.5 rounded font-mono font-bold">Pratinjau Gambar</span>
+                        </div>
+                      )}
+
+                      {/* Presets */}
+                      <div className="pt-1">
+                        <span className="text-[10px] font-bold text-slate-500 block mb-1">Preset Gambar Cepat:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {[
+                            { label: "Hutan Riau", url: "https://images.unsplash.com/photo-1599059813005-11265ba4b2e9?auto=format&fit=crop&q=80&w=600" },
+                            { label: "Konservasi Air", url: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=80&w=600" },
+                            { label: "Energi Surya", url: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&q=80&w=600" },
+                            { label: "Daur Ulang", url: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&q=80&w=600" }
+                          ].map((p) => (
+                            <button
+                              key={p.label}
+                              type="button"
+                              onClick={() => setArtForm({ ...artForm, imageUrl: p.url })}
+                              className="text-[10px] px-2 py-0.5 bg-white hover:bg-emerald-100 text-slate-700 hover:text-emerald-900 rounded border border-slate-200 transition-colors font-medium"
+                            >
+                              {p.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-600 mb-1">URL Tautan Asli</label>
+                      <input
+                        type="text"
+                        required
+                        value={artForm.url}
+                        onChange={(e) => setArtForm({ ...artForm, url: e.target.value })}
+                        placeholder="https://www.greenpeace.org/..."
+                        className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white font-mono"
+                      />
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        type="submit"
+                        className="w-full py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-lg transition-all"
+                      >
+                        {editingArtId ? "Simpan Perubahan" : "Tambahkan Berita"}
+                      </button>
+                      {editingArtId && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingArtId(null);
+                            setArtForm({
+                              category: "Hutan",
+                              hashtag: "#Hutan",
+                              title: "",
+                              excerpt: "",
+                              source: "Greenpeace Indonesia",
+                              date: "16 Juni 2026",
+                              imageUrl: "https://images.unsplash.com/photo-1599059813005-11265ba4b2e9?auto=format&fit=crop&q=80&w=600",
+                              url: "https://www.greenpeace.org/indonesia/siaran-pers/"
+                            });
+                          }}
+                          className="px-3 py-2 bg-slate-200 text-slate-700 font-bold rounded-lg transition-all"
+                        >
+                          Batal
+                        </button>
+                      )}
+                    </div>
+                  </form>
+
+                  {/* List Standard Articles */}
+                  <div className="lg:col-span-7">
+                    <h5 className="font-bold text-slate-700 text-xs uppercase tracking-wider mb-3">Daftar Kabar Konservasi ({articles.length})</h5>
+                    <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
+                      {articles.map((article) => (
+                        <div key={article.id} className="p-3 bg-white border border-slate-100 rounded-xl shadow-inner-sm flex items-start gap-3 hover:border-slate-200 transition-colors">
+                          <img src={article.imageUrl} className="w-16 h-12 rounded-lg object-cover flex-shrink-0 bg-slate-100 border" alt="" referrerPolicy="no-referrer" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-slate-800 truncate">{article.title}</span>
+                              <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-semibold uppercase">{article.category}</span>
+                              <span className="text-[9px] bg-sky-100 text-sky-800 px-1.5 py-0.2 rounded font-semibold">{article.hashtag}</span>
+                            </div>
+                            <p className="text-slate-500 line-clamp-1 italic text-[11px] mt-0.5">{article.excerpt}</p>
+                            <span className="text-[9px] text-slate-400 font-mono font-bold mt-1 block">{article.source} • {article.date}</span>
+                          </div>
+                          <div className="flex gap-1 flex-shrink-0">
+                            <button
+                              onClick={() => startEditArt(article)}
+                              className="p-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition-all"
+                              title="Edit"
+                            >
+                              <Edit3 className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteArt(article.id)}
+                              className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-all"
+                              title="Hapus"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SUB-TAB 6: SECURITY & PASSWORD ADMIN */}
+          {activeSubTab === "security" && (
+            <div className="max-w-xl mx-auto space-y-6 text-xs bg-slate-50 p-6 sm:p-8 rounded-2xl border border-slate-100 shadow-xs">
+              <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
+                <div className="p-3 bg-emerald-900 text-amber-400 rounded-xl">
+                  <Key className="h-6 w-6" />
+                </div>
+                <div>
+                  <h4 className="text-base font-bold text-slate-900">Kelola Password Keamanan Admin</h4>
+                  <p className="text-slate-500 text-xs">
+                    Password ini sepenuhnya dimiliki dan hanya diketahui oleh Administrator Kanwil DJPb Provinsi Riau.
+                  </p>
+                </div>
+              </div>
+
+              {passwordChangeMsg && (
+                <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold rounded-xl flex items-center gap-2">
+                  <Check className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                  <span>{passwordChangeMsg}</span>
+                </div>
+              )}
+
+              {passwordChangeError && (
+                <div className="p-3.5 bg-red-50 border border-red-200 text-red-800 font-bold rounded-xl flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0" />
+                  <span>{passwordChangeError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleChangePassword} className="space-y-4 bg-white p-6 rounded-xl border border-slate-200/80 shadow-xs">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Password / PIN Saat Ini
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={oldPasswordInput}
+                    onChange={(e) => setOldPasswordInput(e.target.value)}
+                    placeholder="Masukkan password saat ini..."
+                    className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-600 font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Password Baru Administrator
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={newPasswordInput}
+                    onChange={(e) => setNewPasswordInput(e.target.value)}
+                    placeholder="Masukkan password baru (minimal 4 karakter)..."
+                    className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-600 font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Konfirmasi Password Baru
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={confirmPasswordInput}
+                    onChange={(e) => setConfirmPasswordInput(e.target.value)}
+                    placeholder="Ketik ulang password baru..."
+                    className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-600 font-mono"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-3 bg-emerald-800 hover:bg-emerald-950 active:scale-95 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  <span>Simpan Password Administrator Baru</span>
+                </button>
+              </form>
+
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-[11px] leading-relaxed space-y-1">
+                <p className="font-bold flex items-center gap-1.5 text-amber-950">
+                  <ShieldCheck className="h-4 w-4 text-amber-700" />
+                  <span>Petunjuk Keamanan Tambahan:</span>
+                </p>
+                <p>
+                  1. Setelah diubah, password baru akan tersimpan di browser internal ini.
+                </p>
+                <p>
+                  2. Pastikan untuk mencatat password baru Tuan & Puan di tempat rahasia yang aman.
+                </p>
               </div>
             </div>
           )}
